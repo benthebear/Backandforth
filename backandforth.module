@@ -1,0 +1,134 @@
+<?
+
+/**
+ * This is an awesome Module to add the "backwards" and "forwards" Links to a node.
+ * 
+ * The Block is always shown, but only if it is presented on a node page, it is linked.
+ * If you want to show it only on Node Pages, use the configuration of the Block at:
+ * admin/build/block/configure/backandforth/0  
+ * 
+ * This function is common within Blogs and especially known from Wordpress.
+ *
+ * I use another name these days, to be forgotten!
+ * 
+ * @author benjamin birkehake <benjamin@birkenhake.org>
+ * @version 0.1 :: 2009 04 09 :: Created the module. Works fine.
+ * @todo  I wonder, wether I should also add a function to use the block on paginated pages
+ * 
+ */
+
+
+// Sometimes during development, it is necessary to rebuild the theme registry.
+//drupal_rebuild_theme_registry();
+
+function backandforth_theme(){
+	return array(
+		'backandforth_block' => array(
+		'arguments' => array('backwards_nid' => NULL, 'forwards_nid' => Null),
+		),
+	);
+}
+
+
+function backandforth_block($op = 'list', $delta = 0){
+	if ($op == 'list') {
+		$blocks[0]['info'] = t('Back and Forth');
+		return $blocks;
+	}
+	else if ($op == 'view') {
+		switch ($delta){
+			case 0:
+				$block['subject'] = t('Back and Forth');
+				
+				// If the Request goes to a node
+				if (arg(0) == 'node') {
+					if (is_numeric(arg(1))) {
+						
+						$data = backandforth_data();
+
+						$block['content'] = theme("backandforth_block", $data["backwards_node"], $data["forwards_node"]);
+						return $block;
+					}
+				}
+				// Otherwise send an Block without links
+				$block['content'] = theme("backandforth_block", false, false);
+				return $block;
+				break;
+		}
+	}
+}
+
+function backandforth_data($node_created=''){
+	if($node_created==''){
+		$node = node_load(arg(1));
+	}else{
+		$node->created = $node_created;
+	}
+	//dprint_r($node);
+
+	// Looking Backwards
+	$backwards_node = backandforth_get_previous_node_by_date($node);
+
+	// Looking forwards
+	$forwards_node = backandforth_get_next_node_by_date($node);
+	
+	$backandforth["backwards_node"] = $backwards_node;
+	$backandforth["forwards_node"] = $forwards_node;
+	
+	return $backandforth;
+}
+
+function backandforth_get_previous_node_by_date($node){
+	$sql = "SELECT nid FROM {node} WHERE created < %d AND status = '1' ORDER BY created DESC LIMIT 1";
+	$result = db_fetch_object(db_query($sql, $node->created));
+	if($result){
+		return $result->nid;
+	}else{
+		return false;
+	}
+
+}
+
+function backandforth_get_next_node_by_date($node){
+	$sql = "SELECT nid FROM {node} WHERE created > %d AND status = '1' ORDER BY created ASC LIMIT 1";
+	$result = db_fetch_object(db_query($sql, $node->created));
+	if($result){
+		return $result->nid;
+	}else{
+		return false;
+	}
+}
+
+/**
+ * Theme the Content of the Block
+ *
+ * As both Node-IDs might be omitted independetly, they are both required.
+ * Call the function with a "false" parameter, if necesessary. 
+ * 
+ * @param integer $backwards_nid
+ * @param integer $forwards_nid
+ * @return string
+ */
+function theme_backandforth_block($backwards_nid, $forwards_nid){
+	// Set default Strings
+	$backwards_string = "< ".t("backwards");
+	$forwards_string = t("forwards")." >";
+	
+	// Additionally add Links if there are node
+	if($backwards_nid){
+		$backwards_string = l($backwards_string, "node/".$backwards_nid);
+	}	
+	if($forwards_nid){
+		$forwards_string = l($forwards_string, "node/".$forwards_nid);
+	}	
+	
+	// Actually generate the Output;
+	$output  = "<p class='backandforthline'>";
+	$output .= "<span class='backwardslink'>".$backwards_string."</span>";
+	$output .= "<span class='and'> &amp; </span>";
+	$output .= "<span class='forwardslink'>".$forwards_string."</span>";
+	$output .= "</p>";
+	
+	// Fire!
+	return $output;
+}

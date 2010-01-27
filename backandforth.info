@@ -1,0 +1,6 @@
+; $Id:  $
+name = Back and forth
+description = Offers two Buttons: "Back" and "Forward".
+package = Other
+version = VERSION
+core = 6.x
