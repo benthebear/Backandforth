@@ -58,6 +58,18 @@ function backandforth_block($op = 'list', $delta = 0){
 	}
 }
 
+function backandforth_nodeapi($node, $op, $arg = 0){
+	switch ($op) {
+
+		case "view":
+			$data = backandforth_data();
+			drupal_set_html_head('  <link rel="prev" href="'.url("node/".$data["backwards_node"]).'" />');
+			drupal_set_html_head('  <link rel="next" href="'.url("node/".$data["forwards_node"]).'" />');
+		break;
+	}
+	
+}
+
 function backandforth_data($node_created=''){
 	if($node_created==''){
 		$node = node_load(arg(1));
